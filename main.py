@@ -6,6 +6,7 @@ import sys
 import datetime
 import hashlib
 import requests
+import requests_cache
 import scraperwiki
 import tempfile
 from cStringIO import StringIO
@@ -24,6 +25,7 @@ def add_watch_url(url):
 
 
 def main():
+    install_cache()
     for (url, old_checksum) in get_urls_to_check():
         new_checksum = make_checksum(download_url(url))
         if old_checksum == new_checksum:
@@ -32,6 +34,11 @@ def main():
         store_checksum(url, new_checksum)
         report_change(url)
      
+
+def install_cache():
+    requests_cache.install_cache(
+        expire_after=12 * 60 * 60)
+
 
 def get_urls_to_check():
     results = scraperwiki.sql.select('url,checksum FROM {}'.format(TABLE_URLS))
