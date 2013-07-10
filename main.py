@@ -12,8 +12,11 @@ import tempfile
 from cStringIO import StringIO
 import os
 
+from send_email import send_email
+
 TABLE_URLS = '_urls'
 TABLE_CHANGES = 'changes'
+EMAIL_VAR_NAME = 'notify_email'
 
 
 def add_watch_url(url):
@@ -88,6 +91,12 @@ def store_checksum(url, checksum):
 
 def report_change(url):
     print("{} : has changed".format(url))
+    notify_email = scraperwiki.sql.get_var(EMAIL_VAR_NAME, None)
+    if notify_email:
+        send_email(notify_email, "[Watch A Web Page] Web page has changed", url)
+    else:
+        print("No {} variable, can't send email.".format(EMAIL_VAR_NAME))
+    
     scraperwiki.sql.save(
         unique_keys=[],
         data={'url': url,
@@ -99,5 +108,8 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         sys.exit(main())
 
-    for url in sys.argv[1:]:
-        add_watch_url(url)
+    if sys.argv[1] == 'email':
+        scraperwiki.sql.save_var(EMAIL_VAR_NAME, sys.argv[2])
+    else:
+        for url in sys.argv[1:]:
+            add_watch_url(url)
