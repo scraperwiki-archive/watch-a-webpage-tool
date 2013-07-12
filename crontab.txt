@@ -1,5 +1,3 @@
-MAILTO="dataservices@scraperwiki.com"
-
 ################################## IMPORTANT! #######################################
 #
 # Don't edit the crontab using 'crontab -e' as it will be overwritten, and it isn't
@@ -26,8 +24,8 @@ MAILTO="dataservices@scraperwiki.com"
 # @reboot  Run at startup
 
 # Automatically install the crontab file from source-control.
-* * * * * crontab %TARGET_DIR%/tool/crontab.txt
+* * * * * crontab ~/tool/crontab.txt
 
 # Run the scraper. The only changes to this line should be the schedule.
-@daily %TARGET_DIR%/run.sh
+@daily ~/tool/main.py --run
 
