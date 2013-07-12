@@ -18,41 +18,63 @@ import scraperwiki
 import tempfile
 from cStringIO import StringIO
 import os
+import argparse
 
 from send_email import send_email
 
-TABLE_URLS = '_urls'
 TABLE_CHANGES = 'changes'
-EMAIL_VAR_NAME = 'notify_email'
-
-
-def add_watch_url(url):
-    scraperwiki.sql.save(
-        unique_keys=['url'],
-        data={'url': url,
-              'checksum': False},
-        table_name=TABLE_URLS)
+DEFAULT_URL = 'http://blog.scraperwiki.com'
+DEFAULT_CHECKSUM = ''
 
 
 def main():
-    install_cache()
-    for (url, old_checksum) in get_urls_to_check():
-        new_checksum = make_checksum(download_url(url))
-        if old_checksum == new_checksum:
-            continue
-        print("{} old: {}  new: {}".format(url, old_checksum, new_checksum))
-        store_checksum(url, new_checksum)
-        report_change(url)
-     
+    create_table()
+    parser = argparse.ArgumentParser(description="Watch a Web Page (URL)")
+    group = parser.add_mutually_exclusive_group(required=True)
 
-def install_cache():
-    requests_cache.install_cache(
-        expire_after=12 * 60 * 60)
+    group.add_argument(
+        '--set-url', dest="url", type=str, metavar='URL',
+        help='Set the url to watch and check for changes')
+
+    group.add_argument('--get-url', action='store_true', dest='get',
+         help='Print the url to watch')
+
+    group.add_argument('--run', action='store_true', help='Check for changes to the web page.')
+
+    args = parser.parse_args()
+    if args.url is not None:
+        if args.url != get_url():  # has it changed?
+            set_url(args.url)
+            check_for_changes()
+	return 0
+
+    elif args.get:
+        print(get_url())
+	return 0
+    
+    elif args.run:
+        check_for_changes()
 
 
-def get_urls_to_check():
-    results = scraperwiki.sql.select('url,checksum FROM {}'.format(TABLE_URLS))
-    return [(row['url'], row['checksum']) for row in results]
+def create_table():
+    scraperwiki.sql.execute(
+        'CREATE TABLE IF NOT EXISTS `changes` (`url` text, `datetime` date);')
+    scraperwiki.sql.commit()
+
+
+def check_for_changes():
+    url = get_url()
+    if not url:
+        scraperwiki.status('error', 'No URL specified.')
+        return
+    old_checksum = get_checksum()
+
+    new_checksum = make_checksum(download_url(url))
+    if old_checksum != new_checksum:
+        set_checksum(new_checksum)
+        if old_checksum != DEFAULT_CHECKSUM:
+            report_change(url)
+    update_status()
 
 
 def download_url(url):
@@ -61,10 +83,26 @@ def download_url(url):
     return StringIO(response.content)
 
 
+def update_status():
+    status_text = 'Last changed: {}'.format(
+        get_most_recent_record('changes', 'datetime'))
+    scraperwiki.status('ok', status_text)
+
+
+def get_most_recent_record(table, column):
+    """
+    Pass a table and column pointing to a date field . The most recent one
+    will be returned.
+    """
+    result = scraperwiki.sql.select(
+        "MAX({1}) AS most_recent FROM {0} LIMIT 1".format(table, column))
+    return result[0]['most_recent']
+
+
 def html_to_text(html):
     (_, html_tmpfile) = tempfile.mkstemp()
     (_, text_tmpfile) = tempfile.mkstemp()
-    
+
     with open(html_tmpfile, 'w') as f:
         f.write(html)
     command = 'html2text -style compact -o {outfile} {infile}'.format(
@@ -72,7 +110,7 @@ def html_to_text(html):
     retval = os.system(command)
     if retval != 0:
         raise RuntimeError("Command failed: {}".format(command))
-    
+
     with open(text_tmpfile, 'r') as f:
         text = f.read()
 
@@ -97,26 +135,30 @@ def store_checksum(url, checksum):
 
 
 def report_change(url):
-    print("{} : has changed".format(url))
-    notify_email = scraperwiki.sql.get_var(EMAIL_VAR_NAME, None)
-    if notify_email:
-        send_email(notify_email, "[Watch A Web Page] Web page has changed", url)
-    else:
-        print("No {} variable, can't send email.".format(EMAIL_VAR_NAME))
-    
     scraperwiki.sql.save(
         unique_keys=[],
         data={'url': url,
-              'datetime': datetime.datetime.now()},
+              'datetime': datetime.datetime.now().date()},
         table_name=TABLE_CHANGES)
 
 
-if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        sys.exit(main())
+def set_url(url):
+    scraperwiki.sql.save_var('url', url)
+    set_checksum(DEFAULT_CHECKSUM)
 
-    if sys.argv[1] == 'email':
-        scraperwiki.sql.save_var(EMAIL_VAR_NAME, sys.argv[2])
-    else:
-        for url in sys.argv[1:]:
-            add_watch_url(url)
+
+def get_url():
+    return scraperwiki.sql.get_var('url', DEFAULT_URL)
+
+
+def get_checksum():
+    return scraperwiki.sql.get_var('checksum', DEFAULT_CHECKSUM)
+
+
+def set_checksum(checksum):
+    return scraperwiki.sql.save_var('checksum', checksum)
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+

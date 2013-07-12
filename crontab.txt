@@ -1,0 +1,33 @@
+MAILTO="dataservices@scraperwiki.com"
+
+################################## IMPORTANT! #######################################
+#
+# Don't edit the crontab using 'crontab -e' as it will be overwritten, and it isn't
+# source-controlled. Edit %TARGET_DIR%/tool/crontab.txt instead!
+#
+##################################################################################### 
+
+
+# *    *    *    *    *  command to be executed
+# ┬    ┬    ┬    ┬    ┬
+# │    │    │    │    │
+# │    │    │    │    │
+# │    │    │    │    └───── day of week (0 - 6) (0 or 6 are Sunday to Saturday, or use names)
+# │    │    │    └────────── month (1 - 12)
+# │    │    └─────────────── day of month (1 - 31)
+# │    └──────────────────── hour (0 - 23)
+# └───────────────────────── min (0 - 59)
+
+# @yearly (or @annually)  Run once a year at midnight in the morning of 1st-Jan    0 0 1 1 *
+# @monthly Run once a month at midnight in the morning of the first of the month   0 0 1 * *
+# @weekly  Run once a week at midnight in the morning of Sunday                    0 0 * * 0
+# @daily   Run once a day at midnight                                              0 0 * * *
+# @hourly  Run once an hour at the beginning of the hour                           0 * * * *
+# @reboot  Run at startup
+
+# Automatically install the crontab file from source-control.
+* * * * * crontab %TARGET_DIR%/tool/crontab.txt
+
+# Run the scraper. The only changes to this line should be the schedule.
+@daily %TARGET_DIR%/run.sh
+
