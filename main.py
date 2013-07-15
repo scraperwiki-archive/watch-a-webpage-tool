@@ -22,6 +22,7 @@ import argparse
 TABLE_CHANGES = 'changes'
 DEFAULT_URL = 'http://blog.scraperwiki.com'
 DEFAULT_CHECKSUM = ''
+DEFAULT_HTML = ''
 
 
 def main():
@@ -72,9 +73,11 @@ def check_for_changes():
     new_checksum = make_checksum(current_html)
     if old_checksum != new_checksum:
         set_checksum(new_checksum)
+        old_html = get_current_html()
         set_current_html(current_html)
         if old_checksum != DEFAULT_CHECKSUM:
-            report_change(url)
+            diff = create_diff(old_html, current_html)
+            report_change(url, diff)
     update_status()
 
 
@@ -127,11 +130,16 @@ def make_checksum(html):
     return m.hexdigest()
 
 
-def report_change(url):
+def create_diff(old_html, new_html):
+    return ''
+
+
+def report_change(url, text_diff):
     scraperwiki.sql.save(
         unique_keys=[],
         data={'url': url,
-              'datetime': datetime.datetime.now().date()},
+              'datetime': datetime.datetime.now().date(),
+              'text_diff': text_diff},
         table_name=TABLE_CHANGES)
 
 
@@ -150,6 +158,10 @@ def get_checksum():
 
 def set_checksum(checksum):
     return scraperwiki.sql.save_var('checksum', checksum)
+
+
+def get_current_html():
+    return scraperwiki.sql.get_var('current_html', DEFAULT_HTML)
 
 
 def set_current_html(html):
