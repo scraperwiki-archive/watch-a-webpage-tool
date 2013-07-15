@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals
 import sys
+import codecs
 import datetime
 import hashlib
 import requests
@@ -64,7 +65,8 @@ def check_for_changes():
         return
 
     old_checksum = get_checksum()
-    current_html = download_url(url).read()
+    html = download_url(url).read()
+    current_html = prettify_html(html)
 
     new_checksum = make_checksum(current_html)
     if old_checksum != new_checksum:
@@ -108,7 +110,7 @@ def html_to_text(html):
     (_, text_tmpfile) = tempfile.mkstemp()
 
     with open(html_tmpfile, 'w') as f:
-        f.write(html)
+        f.write(html.encode('utf-8'))
     command = 'html2text -style compact -o {outfile} {infile}'.format(
         outfile=text_tmpfile, infile=html_tmpfile)
     retval = os.system(command)
@@ -200,4 +202,5 @@ def set_current_html(html):
 
 
 if __name__ == '__main__':
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
     sys.exit(main())
