@@ -166,12 +166,11 @@ def diff_content(old_html, new_html):
     return ''  # zero return code means inputs are the same
 
 
-def report_change(url, current_html, text_diff):
+def report_change(url, current_html, html_diff):
     scraperwiki.sql.save(
         unique_keys=[],
         data={'url': url,
-              'datetime': datetime.datetime.now().date(),
-              'text_diff': text_diff,
+              'html_diff': html_diff,
               'html': current_html},
         table_name=TABLE_CHANGES)
 
