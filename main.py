@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-# Usage:
-#
-#     main.py email <notification email>  - set the notify email
-#     main.py <url to watch>              - add a url
-#     main.py                             - check for changes
-
-
 from __future__ import unicode_literals
 import sys
 import datetime
