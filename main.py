@@ -13,14 +13,11 @@ import sys
 import datetime
 import hashlib
 import requests
-import requests_cache
 import scraperwiki
 import tempfile
 from cStringIO import StringIO
 import os
 import argparse
-
-from send_email import send_email
 
 TABLE_CHANGES = 'changes'
 DEFAULT_URL = 'http://blog.scraperwiki.com'
@@ -37,21 +34,22 @@ def main():
         help='Set the url to watch and check for changes')
 
     group.add_argument('--get-url', action='store_true', dest='get',
-         help='Print the url to watch')
+                       help='Print the url to watch')
 
-    group.add_argument('--run', action='store_true', help='Check for changes to the web page.')
+    group.add_argument('--run', action='store_true',
+                       help='Check for changes to the web page.')
 
     args = parser.parse_args()
     if args.url is not None:
         if args.url != get_url():  # has it changed?
             set_url(args.url)
             check_for_changes()
-	return 0
+        return 0
 
     elif args.get:
         print(get_url())
-	return 0
-    
+        return 0
+
     elif args.run:
         check_for_changes()
 
@@ -126,14 +124,6 @@ def make_checksum(html_fobj):
     return m.hexdigest()
 
 
-def store_checksum(url, checksum):
-    scraperwiki.sql.save(
-        unique_keys=['url'],
-        data={'url': url,
-              'checksum': checksum},
-        table_name=TABLE_URLS)
-
-
 def report_change(url):
     scraperwiki.sql.save(
         unique_keys=[],
@@ -161,4 +151,3 @@ def set_checksum(checksum):
 
 if __name__ == '__main__':
     sys.exit(main())
-
