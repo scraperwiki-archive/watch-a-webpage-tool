@@ -159,9 +159,9 @@ def diff_content(old_html, new_html):
         else:  # error
             raise RuntimeError("Command failed with retcode {}: {}\n{}".format(
                 e.returncode, e.command, e.output))
-
-    os.unlink(left_tmpfile)
-    os.unlink(right_tmpfile)
+    finally:
+        os.unlink(left_tmpfile)
+        os.unlink(right_tmpfile)
 
     return ''  # zero return code means inputs are the same
 
