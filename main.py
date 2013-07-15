@@ -79,7 +79,7 @@ def check_for_changes():
         set_current_html(current_html)
         if old_checksum != DEFAULT_CHECKSUM:
             diff = diff_content(old_html, current_html)
-            report_change(url, diff)
+            report_change(url, current_html, diff)
     update_status()
 
 
@@ -165,12 +165,13 @@ def diff_content(old_html, new_html):
     return ''  # zero return code means inputs are the same
 
 
-def report_change(url, text_diff):
+def report_change(url, current_html, text_diff):
     scraperwiki.sql.save(
         unique_keys=[],
         data={'url': url,
               'datetime': datetime.datetime.now().date(),
-              'text_diff': text_diff},
+              'text_diff': text_diff,
+              'html': current_html},
         table_name=TABLE_CHANGES)
 
 
