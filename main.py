@@ -18,6 +18,8 @@ import tempfile
 from cStringIO import StringIO
 import os
 import argparse
+import subprocess
+import shlex
 
 TABLE_CHANGES = 'changes'
 DEFAULT_URL = 'http://blog.scraperwiki.com'
@@ -76,7 +78,7 @@ def check_for_changes():
         old_html = get_current_html()
         set_current_html(current_html)
         if old_checksum != DEFAULT_CHECKSUM:
-            diff = create_diff(old_html, current_html)
+            diff = diff_content(old_html, current_html)
             report_change(url, diff)
     update_status()
 
@@ -104,6 +106,10 @@ def get_most_recent_record(table, column):
 
 
 def html_to_text(html):
+    """
+    >>> html_to_text('<html><body>Foo</body></html')
+    'Foo\\n'
+    """
     (_, html_tmpfile) = tempfile.mkstemp()
     (_, text_tmpfile) = tempfile.mkstemp()
 
@@ -130,8 +136,33 @@ def make_checksum(html):
     return m.hexdigest()
 
 
-def create_diff(old_html, new_html):
-    return ''
+def diff_content(old_html, new_html):
+    """
+    >>> diff_content('<html>Foo</html>\\n', '<html>Bar</html>\\n').split('\\n')
+    [u'1c1', u'< <html>Foo</html>', u'---', u'> <html>Bar</html>', u'']
+    """
+    (_, left_tmpfile) = tempfile.mkstemp()
+    (_, right_tmpfile) = tempfile.mkstemp()
+
+    with open(left_tmpfile, 'w') as f, open(right_tmpfile, 'w') as g:
+        f.write(old_html)
+        g.write(new_html)
+
+    command = 'diff --ignore-all-space {left} {right}'.format(
+        left=left_tmpfile, right=right_tmpfile)
+    try:
+        subprocess.check_output(shlex.split(command))
+    except subprocess.CalledProcessError as e:
+        if e.returncode == 1:  # inputs differ
+            return e.output
+        else:  # error
+            raise RuntimeError("Command failed with retcode {}: {}\n{}".format(
+                e.returncode, e.command, e.output))
+
+    os.unlink(left_tmpfile)
+    os.unlink(right_tmpfile)
+
+    return ''  # zero return code means inputs are the same
 
 
 def report_change(url, text_diff):
