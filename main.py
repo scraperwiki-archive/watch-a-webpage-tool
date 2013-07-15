@@ -170,6 +170,8 @@ def report_change(url, current_html, html_diff):
     scraperwiki.sql.save(
         unique_keys=[],
         data={'url': url,
+              'datetime': datetime.datetime.now().strftime(
+                  "%Y-%m-%d %H:%M:%S"),
               'html_diff': html_diff,
               'html': current_html},
         table_name=TABLE_CHANGES)
