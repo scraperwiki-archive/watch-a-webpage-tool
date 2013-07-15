@@ -65,11 +65,14 @@ def check_for_changes():
     if not url:
         scraperwiki.status('error', 'No URL specified.')
         return
-    old_checksum = get_checksum()
 
-    new_checksum = make_checksum(download_url(url))
+    old_checksum = get_checksum()
+    current_html = download_url(url).read()
+
+    new_checksum = make_checksum(current_html)
     if old_checksum != new_checksum:
         set_checksum(new_checksum)
+        set_current_html(current_html)
         if old_checksum != DEFAULT_CHECKSUM:
             report_change(url)
     update_status()
@@ -117,8 +120,8 @@ def html_to_text(html):
     return text
 
 
-def make_checksum(html_fobj):
-    text = html_to_text(html_fobj.read())
+def make_checksum(html):
+    text = html_to_text(html)
     m = hashlib.md5()
     m.update(text)
     return m.hexdigest()
@@ -147,6 +150,10 @@ def get_checksum():
 
 def set_checksum(checksum):
     return scraperwiki.sql.save_var('checksum', checksum)
+
+
+def set_current_html(html):
+    return scraperwiki.sql.save_var('current_html', html)
 
 
 if __name__ == '__main__':
