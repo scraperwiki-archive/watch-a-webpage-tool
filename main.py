@@ -20,6 +20,7 @@ import os
 import argparse
 import subprocess
 import shlex
+from bs4 import BeautifulSoup
 
 TABLE_CHANGES = 'changes'
 DEFAULT_URL = 'http://blog.scraperwiki.com'
@@ -173,6 +174,10 @@ def report_change(url, current_html, text_diff):
               'text_diff': text_diff,
               'html': current_html},
         table_name=TABLE_CHANGES)
+
+
+def prettify_html(html):
+    return BeautifulSoup(html).prettify()
 
 
 def set_url(url):
