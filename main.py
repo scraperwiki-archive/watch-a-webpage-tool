@@ -70,12 +70,11 @@ def check_for_changes():
         return
 
     old_checksum = get_checksum()
-    html = download_url(url).read()
-    current_html = prettify_html(html)
+    current_html = prettify_html(download_url(url).read())
 
-    new_checksum = make_checksum(current_html)
-    if old_checksum != new_checksum:
-        set_checksum(new_checksum)
+    current_checksum = make_checksum(current_html)
+    if old_checksum != current_checksum:
+        set_checksum(current_checksum)
         old_html = get_current_html()
         set_current_html(current_html)
         if old_checksum != DEFAULT_CHECKSUM:
