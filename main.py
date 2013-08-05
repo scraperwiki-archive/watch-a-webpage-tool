@@ -81,11 +81,14 @@ def check_for_changes():
 
         if old_checksum != DEFAULT_CHECKSUM:
             current_text = html_to_text(current_html)
+            old_text = html_to_text(current_html)
+
             html_diff = diff_content(old_html, current_html)
             text_diff = diff_content(
-                html_to_text(old_html),
+                old_text,
                 current_text)
-            save_change(url, current_html, html_diff, current_text, text_diff)
+            save_change(url, current_html, html_diff, current_text, old_text,
+                        text_diff)
 
 
 def download_url(url):
@@ -175,13 +178,15 @@ def diff_content(old_html, new_html):
     return ''  # zero return code means inputs are the same
 
 
-def save_change(url, current_html, html_diff, current_text, text_diff):
+def save_change(url, current_html, html_diff, text_current, text_old,
+                text_diff):
     scraperwiki.sql.save(
         unique_keys=[],
         data=OrderedDict([
             ('url', url),
             ('datetime', datetime.datetime.now()),
-            ('text', current_text),
+            ('text_current', text_current),
+            ('text_old', text_old),
             ('text_diff', text_diff),
             ('html', current_html),
             ('html_diff', html_diff),
