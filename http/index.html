@@ -6,13 +6,33 @@
     <meta http-equiv="cleartype" content="on">
     <link rel="stylesheet" href="//scraperwiki.com/vendor/style/bootstrap.min.css">
     <link rel="stylesheet" href="//scraperwiki.com/style/scraperwiki.css">
+    <link rel="stylesheet" href="style.css">
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
     <script src="//scraperwiki.com/vendor/js/bootstrap.min.js"></script>
     <script src="//scraperwiki.com/js/scraperwiki.js"></script>
     <script src="//scraperwiki.com/vendor/js/bootstrap.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
-    <script src="./code.js"></script>
+    <script src="code.js"></script>
+    <script src="jsdiff.js"></script>
     <script>
+      function displayLatestChange() {
+        var sqlQuery = 'SELECT text_current, text_old FROM changes ' + 
+                       'ORDER BY datetime DESC ' + 
+                       'LIMIT 1'
+
+        scraperwiki.sql(sqlQuery, function(data) {
+          console.log(data)
+          if(data.length == 1) {
+            console.log(data[0])
+            displayDiff(data[0].text_old, data[0].text_current)
+          }
+        })
+      }
+
+      function displayDiff(textLeft, textRight) {
+         $('#latest-change').html(diffString(textLeft, textRight))
+      }
+
       $(function() {
           var updateInputBox = function(url) {
             $('#url').val(url);
@@ -24,18 +44,19 @@
             scraperwiki.exec("tool/main.py '--set-url=" + url + "'", function() {
             });
           })
+          displayLatestChange()
       })
     </script>
   </head>
   <body style="text-align: center">
-    <div class="row">
-      <div class="container">
+    <div class="container">
+      <div class="row">
         <h1>Watch a Web Page</h1>
 
         <form>
           <div class="input-append">
             <input type="text" name="notify_email" id="url" placeholder="loading...">
-            <button class="btn btn-primary" type="submit" id="watch">Update</button>
+            <button class="btn btn-primary" type="submit" id="watch">Set</button>
           </div>
         </form>
         <div>
@@ -44,6 +65,10 @@
         </p>
         </div>
       </div><!-- row -->
+
+      <div class="row" id='latest-change'>
+      </div>
+ 
     </div>
   </body>
 </html>

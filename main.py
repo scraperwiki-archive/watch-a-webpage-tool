@@ -81,7 +81,7 @@ def check_for_changes():
 
         if old_checksum != DEFAULT_CHECKSUM:
             current_text = html_to_text(current_html)
-            old_text = html_to_text(current_html)
+            old_text = html_to_text(old_html)
 
             html_diff = diff_content(old_html, current_html)
             text_diff = diff_content(
