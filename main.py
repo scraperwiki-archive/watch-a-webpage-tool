@@ -67,9 +67,6 @@ def create_table():
 
 def check_for_changes():
     url = get_url()
-    if url == DEFAULT_URL:
-        scraperwiki.status('error', 'Set a URL to watch.')
-        return
 
     old_checksum = get_checksum()
     old_html = get_current_html()
