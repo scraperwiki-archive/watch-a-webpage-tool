@@ -23,7 +23,24 @@ DEFAULT_HTML = ''
 
 
 def main():
+    args = parse_command_line()
     create_table()
+
+    if args.url is not None:
+        if args.url != get_url():  # has it changed?
+            set_url(args.url)
+            check_for_changes()
+        return 0
+
+    elif args.get:
+        print(get_url())
+        return 0
+
+    elif args.run:
+        check_for_changes()
+
+
+def parse_command_line():
     parser = argparse.ArgumentParser(description="Watch a Web Page (URL)")
     group = parser.add_mutually_exclusive_group(required=True)
 
@@ -37,19 +54,7 @@ def main():
     group.add_argument('--run', action='store_true',
                        help='Check for changes to the web page.')
 
-    args = parser.parse_args()
-    if args.url is not None:
-        if args.url != get_url():  # has it changed?
-            set_url(args.url)
-            check_for_changes()
-        return 0
-
-    elif args.get:
-        print(get_url())
-        return 0
-
-    elif args.run:
-        check_for_changes()
+    return parser.parse_args()
 
 
 def create_table():
