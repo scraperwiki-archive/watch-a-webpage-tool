@@ -30,6 +30,7 @@ def main():
     if args.url is not None:
         if args.url != get_url():  # has it changed?
             set_url(args.url)
+            delete_changes()
             check_for_changes()
         return 0
 
@@ -62,6 +63,11 @@ def parse_command_line():
 def create_table():
     scraperwiki.sql.execute(
         'CREATE TABLE IF NOT EXISTS `changes` (`url` text, `datetime` date);')
+    scraperwiki.sql.commit()
+
+
+def delete_changes():
+    scraperwiki.sql.execute('DELETE FROM `changes`')
     scraperwiki.sql.commit()
 
 
