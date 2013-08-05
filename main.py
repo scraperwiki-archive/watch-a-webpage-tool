@@ -14,7 +14,8 @@ import os
 import argparse
 import subprocess
 import shlex
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  # for prettify
+from collections import OrderedDict
 
 TABLE_CHANGES = 'changes'
 DEFAULT_URL = 'http://blog.scraperwiki.com'
@@ -38,6 +39,7 @@ def main():
 
     elif args.run:
         check_for_changes()
+        update_status()
 
 
 def parse_command_line():
@@ -65,22 +67,28 @@ def create_table():
 
 def check_for_changes():
     url = get_url()
-    if not url:
-        scraperwiki.status('error', 'No URL specified.')
+    if url == DEFAULT_URL:
+        scraperwiki.status('error', 'Set a URL to watch.')
         return
 
     old_checksum = get_checksum()
-    current_html = prettify_html(download_url(url).read())
+    old_html = get_current_html()
 
+    current_html = prettify_html(download_url(url).read())
     current_checksum = make_checksum(current_html)
+
     if old_checksum != current_checksum:
+
         set_checksum(current_checksum)
-        old_html = get_current_html()
         set_current_html(current_html)
+
         if old_checksum != DEFAULT_CHECKSUM:
-            diff = diff_content(old_html, current_html)
-            report_change(url, current_html, diff)
-    update_status()
+            current_text = html_to_text(current_html)
+            html_diff = diff_content(old_html, current_html)
+            text_diff = diff_content(
+                html_to_text(old_html),
+                current_text)
+            save_change(url, current_html, html_diff, current_text, text_diff)
 
 
 def download_url(url):
@@ -130,6 +138,11 @@ def html_to_text(html):
 
 
 def make_checksum(html):
+    """
+    Generate a checksum from the *text* of the HTML page, not the HTML itself.
+    It's quite common that HTML pages change each request. The visible text
+    content is less likely to change.
+    """
     text = html_to_text(html)
     m = hashlib.md5()
     m.update(text)
@@ -165,14 +178,17 @@ def diff_content(old_html, new_html):
     return ''  # zero return code means inputs are the same
 
 
-def report_change(url, current_html, html_diff):
+def save_change(url, current_html, html_diff, current_text, text_diff):
     scraperwiki.sql.save(
         unique_keys=[],
-        data={'url': url,
-              'datetime': datetime.datetime.now().strftime(
-                  "%Y-%m-%d %H:%M:%S"),
-              'html_diff': html_diff,
-              'html': current_html},
+        data=OrderedDict([
+            ('url', url),
+            ('datetime', datetime.datetime.now()),
+            ('text', current_text),
+            ('text_diff', text_diff),
+            ('html', current_html),
+            ('html_diff', html_diff),
+        ]),
         table_name=TABLE_CHANGES)
 
 
